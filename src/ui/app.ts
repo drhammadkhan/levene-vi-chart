@@ -100,11 +100,8 @@ export async function startApp(root: HTMLElement) {
         <button class="primary" data-act="new">+ New patient</button>
         <input type="search" id="filter" placeholder="Search name / hospital no." value="${esc(filter)}" aria-label="Search patients">
         <ul class="plist">${shown.map((x) => `<li data-id="${x.id}" class="${x.id === selectedId ? 'sel' : ''}">${esc(x.name || 'Unnamed')}<small>${esc(x.hospitalNumber || 'no hospital no.')} · ${x.measurements.length} scan${x.measurements.length === 1 ? '' : 's'}</small></li>`).join('') || '<li class="muted">No patients yet</li>'}</ul>
-        <div class="row">
-          <button data-act="backup" title="One JSON file with every patient">Back up all</button>
-          <button data-act="import">Import</button>
-        </div>
-        <input type="file" id="file" accept="application/json,.json,text/html,.html" hidden>
+        <button data-act="save-file" ${p ? '' : 'disabled'} title="Download this patient as a single HTML file you can reopen later">Save patient file</button>
+        <div id="savestate" class="muted">${p && unsaved.has(p.id) ? 'Unsaved changes: save the patient file to keep a copy.' : ''}</div>
         <div class="muted">All data stays on this device. Nothing is sent anywhere.</div>
         </div>
       </aside>
@@ -114,9 +111,22 @@ export async function startApp(root: HTMLElement) {
         ${backupNudge() ? `<div class="banner noprint">${backupNudge()}Patients are stored in this browser only, which can be cleared. Use <b>Save patient file</b> on each patient to keep a copy.</div>` : ''}
         ${toast ? `<div class="banner">${esc(toast)}</div>` : ''}
         ${p ? patientView(p) : '<div class="card accent">Create or select a patient to begin.</div>'}
+        ${allPatientsSection()}
         ${legend()}
       </main>
       </div>`;
+  }
+
+  function allPatientsSection(): string {
+    return `<section class="card noprint allpatients">
+      <h2>All patients</h2>
+      <div class="row">
+        <button data-act="backup" title="One JSON file with every patient">Back up all</button>
+        <button data-act="import" title="Add patients from a JSON backup or a saved patient file">Import</button>
+        <input type="file" id="file" accept="application/json,.json,text/html,.html" hidden>
+      </div>
+      <div class="hint">Back up all writes one JSON file with every patient on this device. Import accepts that file or any saved patient file, and keeps the more recently edited copy of a patient.</div>
+    </section>`;
   }
 
   function legend(): string {
@@ -148,11 +158,9 @@ export async function startApp(root: HTMLElement) {
       </div>
       <div class="card chartwrap">${buildChartSvg(p.measurements, { theme: themeFor(), title: [p.name, p.hospitalNumber].filter(Boolean).join(' · ') || undefined })}</div>
       <div class="row noprint">
-        <button class="primary" data-act="save-file">Save patient file</button>
-        <button data-act="pdf">Export PDF</button>
+        <button class="primary" data-act="pdf">Export PDF</button>
         <button data-act="print">Print</button>
         <button class="danger" data-act="delete">Delete patient</button>
-        <span id="savestate" class="muted">${unsaved.has(p.id) ? 'Unsaved changes: save the patient file to keep a copy.' : ''}</span>
       </div>
       <div class="hint noprint">The patient file is a single HTML file holding this patient's details and the app itself. Open it in any browser to carry on where you left off; no import needed. It contains patient-identifiable data, so store it securely.</div>`;
   }
