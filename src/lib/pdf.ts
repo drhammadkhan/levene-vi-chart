@@ -19,9 +19,11 @@ export async function exportPatientPdf(p: Patient): Promise<void> {
   const pageW = doc.internal.pageSize.getWidth();
   const pageH = doc.internal.pageSize.getHeight();
   const margin = 15;
-  doc.setFont('helvetica', 'bold').setFontSize(16);
+  doc.setFont('helvetica', 'normal').setFontSize(8).setTextColor(120);
+  doc.text('EVELINA NEONATAL DATA GROUP', margin, 11);
+  doc.setTextColor(0).setFont('helvetica', 'bold').setFontSize(16);
   doc.text('Ventricular index chart', margin, 18);
-  doc.setFont('helvetica', 'normal').setFontSize(10);
+  doc.setFont('helvetica', 'normal').setFontSize(10).setTextColor(0);
   doc.text(`Name: ${p.name || '-'}`, margin, 26);
   doc.text(`Hospital number: ${p.hospitalNumber || '-'}`, margin, 31);
   doc.text(`Exported: ${new Date().toLocaleString()}`, pageW - margin, 26, { align: 'right' });
@@ -77,6 +79,7 @@ export async function exportPatientPdf(p: Patient): Promise<void> {
     doc.setPage(i).setFont('helvetica', 'normal').setFontSize(7.5).setTextColor(100);
     const note = doc.splitTextToSize(`Reference: ${CITATION} Centiles are linearly interpolated between whole weeks and not extrapolated outside 27-40 weeks. "ABOVE" = above the 97th centile + 4 mm. This chart is a reference aid and does not replace clinical judgement.`, pageW - margin * 2);
     doc.text(note, margin, pageH - 14);
+    doc.text('Evelina Neonatal data group', margin, pageH - 6);
     doc.text(`Page ${i} of ${pages}`, pageW - margin, pageH - 6, { align: 'right' });
   }
   const safe = (p.hospitalNumber || p.name || 'patient').replace(/[^\w.-]+/g, '_');

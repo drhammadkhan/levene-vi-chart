@@ -1,5 +1,5 @@
 import { centilesAt, decimalPma, flagVi } from '../lib/centiles';
-import { buildChartSvg } from '../lib/chart';
+import { buildChartSvg, type ChartTheme } from '../lib/chart';
 import { makeBackup, mergeImport, parseBackup } from '../lib/backup';
 import { openStore, type PatientStore } from '../lib/storage';
 import { newMeasurement, newPatient, type Measurement, type Patient } from '../lib/types';
@@ -63,10 +63,16 @@ export async function startApp(root: HTMLElement) {
     const p = current();
     const shown = patients.filter((x) => (x.name + ' ' + x.hospitalNumber).toLowerCase().includes(filter.toLowerCase()));
     root.innerHTML = `
+      <header class="topbar">
+        <div class="brand">Evelina Neonatal data group</div>
+        <div class="kicker">Levene 1981 reference &middot; lateral ventricles</div>
+        <h1>Ventricular index <em>chart</em></h1>
+      </header>
+      <div class="layout">
       <aside class="noprint">
-        <h1>Levene VI chart</h1>
+        <div class="sidecard">
         <button class="primary" data-act="new">+ New patient</button>
-        <input type="search" id="filter" placeholder="Search name / hospital no." value="${esc(filter)}">
+        <input type="search" id="filter" placeholder="Search name / hospital no." value="${esc(filter)}" aria-label="Search patients">
         <ul class="plist">${shown.map((x) => `<li data-id="${x.id}" class="${x.id === selectedId ? 'sel' : ''}">${esc(x.name || 'Unnamed')}<small>${esc(x.hospitalNumber || 'no hospital no.')} · ${x.measurements.length} scan${x.measurements.length === 1 ? '' : 's'}</small></li>`).join('') || '<li class="muted">No patients yet</li>'}</ul>
         <div class="row">
           <button data-act="backup">Back up all</button>
@@ -74,19 +80,32 @@ export async function startApp(root: HTMLElement) {
         </div>
         <input type="file" id="file" accept="application/json,.json" hidden>
         <div class="muted">All data stays on this device. Nothing is sent anywhere.</div>
+        </div>
       </aside>
       <main>
         ${store.persistent ? '' : '<div class="banner">Browser storage is unavailable, so data will be lost when you close this page. Export a backup before leaving.</div>'}
         ${backupNudge() ? `<div class="banner noprint">${backupNudge()}Browser storage can be cleared, so use <b>Back up all</b> regularly.</div>` : ''}
         ${toast ? `<div class="banner">${esc(toast)}</div>` : ''}
-        ${p ? patientView(p) : '<div class="card">Create or select a patient to begin.</div>'}
-      </main>`;
+        ${p ? patientView(p) : '<div class="card accent">Create or select a patient to begin.</div>'}
+        ${legend()}
+      </main>
+      </div>`;
   }
+
+  function legend(): string {
+    return `<footer class="legend">
+      <div class="notice" role="note"><strong>This tool supports, and does not replace, clinical judgement and current guidance.</strong> Use at your own discretion.</div>
+      <div><b>Reference:</b> <a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC1627506/pdf/archdisch00762-0010.pdf" target="_blank" rel="noopener">Levene MI. Arch Dis Child 1981;56:900-904</a>. Flag = above the 97th centile + 4 mm, linearly interpolated between whole weeks (27&ndash;40 weeks only).</div>
+      <p class="credit">A tool from the Evelina Neonatal data group.</p>
+    </footer>`;
+  }
+
+  const themeFor = (): ChartTheme => (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
 
   function patientView(p: Patient): string {
     const rows = p.measurements.map((m) => rowView(m)).join('');
     return `
-      <div class="card">
+      <div class="card accent">
         <div class="row">
           <label>Name<input data-p="name" value="${esc(p.name)}" autocomplete="off"></label>
           <label>Hospital number<input data-p="hospitalNumber" value="${esc(p.hospitalNumber)}" autocomplete="off"></label>
@@ -100,7 +119,7 @@ export async function startApp(root: HTMLElement) {
         <div class="row noprint" style="margin-top:10px"><button data-act="addrow">+ Add scan</button></div>
         <div class="hint">Values above the interpolated 97th centile + 4 mm are shown in red. Centiles only exist for 27–40 weeks PMA.</div>
       </div>
-      <div class="card chartwrap">${buildChartSvg(p.measurements, { title: [p.name, p.hospitalNumber].filter(Boolean).join(' · ') || undefined })}</div>
+      <div class="card chartwrap">${buildChartSvg(p.measurements, { theme: themeFor(), title: [p.name, p.hospitalNumber].filter(Boolean).join(' · ') || undefined })}</div>
       <div class="row noprint">
         <button class="primary" data-act="pdf">Export PDF</button>
         <button data-act="export-one">Save patient (JSON)</button>
@@ -189,5 +208,6 @@ export async function startApp(root: HTMLElement) {
     } catch (err) { say((err as Error).message); }
   }
 
+  window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => render());
   render();
 }
