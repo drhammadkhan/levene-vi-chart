@@ -11,14 +11,15 @@ Plot right and left ventricular index (VI) against postmenstrual age on the Leve
 - Values above the interpolated 97th + 4 mm line are flagged
 - PDF export (vector chart + table of values), print, JSON export/import for backup and moving between devices
 
-## Persistence: please read
-Browser storage can be cleared (clearing site data, some private modes, storage pressure). Use **Back up all** regularly and keep the JSON file somewhere safe. Importing merges by patient id; the more recently edited copy wins.
+## Saving: patient files
+Each patient can be saved as a **patient file**: one HTML file containing the whole app plus that patient's details and measurements. Open it in any browser to carry on where you left off, then **Save patient file** again to write an updated copy. No export or import step is needed. A patient file is about 1 MB and contains patient-identifiable data, so store it securely.
 
-## Two ways to run it
-- **Hosted:** GitHub Pages build (`npm run build`, output in `dist/`).
-- **Single file:** `npm run build:single` produces `dist-single/index.html`, one self-contained file that works offline from a USB stick or shared drive. Each tagged release (`v*`) attaches it as `levene-vi-chart.html`.
+- Opening a patient file loads that patient into the browser's local storage on that device. If the device already holds a *newer* copy of the same patient, the newer copy is shown and a notice says so.
+- Patients are also autosaved in the browser's IndexedDB, but browser storage can be cleared, so patient files are the durable record.
+- **Back up all** writes one JSON file with every patient, and **Import** accepts that JSON or any patient file (merging by patient id; the more recently edited copy wins).
 
-Note: the hosted site and the single file are different "origins", so their stored patients are separate. Move data between them with the JSON export/import.
+## Build
+`npm run build` produces `dist/index.html`, a single self-contained file. It is both the hosted GitHub Pages site and the template for patient files. Each tagged release (`v*`) attaches it as `levene-vi-chart.html`, which works offline from a USB stick or shared drive.
 
 ## Development
 ```bash

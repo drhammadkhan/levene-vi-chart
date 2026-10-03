@@ -1,6 +1,7 @@
 import { centilesAt, decimalPma, flagVi } from '../lib/centiles';
 import { buildChartSvg, type ChartTheme } from '../lib/chart';
-import { makeBackup, mergeImport, parseBackup } from '../lib/backup';
+import { makeBackup, mergeImport } from '../lib/backup';
+import { buildPatientHtml, parseImport, patientFileName, readEmbedded } from '../lib/patientfile';
 import { openStore, type PatientStore } from '../lib/storage';
 import { newMeasurement, newPatient, type Measurement, type Patient } from '../lib/types';
 
@@ -37,15 +38,40 @@ export async function startApp(root: HTMLElement) {
   let selectedId: string | null = patients[0]?.id ?? null;
   let filter = '';
   let toast = '';
+  let fileNotice = '';
   const saveTimers = new Map<string, number>();
+  /** Patients edited since they were last saved to a file (this session). */
+  const unsaved = new Set<string>();
+
+  // Opened from a saved patient file: load that patient, unless this device already has a newer copy.
+  let embedded: Patient | null = null;
+  try { embedded = readEmbedded(document); } catch { fileNotice = 'The patient data inside this file could not be read.'; }
+  if (embedded) {
+    const cur = patients.find((x) => x.id === embedded!.id);
+    if (!cur || embedded.updatedAt > cur.updatedAt) {
+      await store.put(embedded);
+      patients = [embedded, ...patients.filter((x) => x.id !== embedded!.id)];
+    } else if (cur.updatedAt > embedded.updatedAt) {
+      fileNotice = `This device holds a newer copy of this patient (edited ${new Date(cur.updatedAt).toLocaleString()}) than this file, so the newer copy is shown. Save the patient file again to update it.`;
+    }
+    selectedId = embedded.id;
+  }
 
   const current = () => patients.find((p) => p.id === selectedId) ?? null;
   const say = (t: string) => { toast = t; render(); setTimeout(() => { if (toast === t) { toast = ''; render(); } }, 4000); };
 
   function persist(p: Patient) {
     p.updatedAt = new Date().toISOString();
+    unsaved.add(p.id);
+    updateSaveState();
     clearTimeout(saveTimers.get(p.id));
     saveTimers.set(p.id, window.setTimeout(() => store.put(structuredClone(p)).catch(() => say('Could not save to this device.')), 250));
+  }
+
+  function updateSaveState() {
+    const el = root.querySelector('#savestate');
+    const p = current();
+    if (el) el.textContent = p && unsaved.has(p.id) ? 'Unsaved changes: save the patient file to keep a copy.' : '';
   }
 
   function backupNudge(): string {
@@ -54,7 +80,7 @@ export async function startApp(root: HTMLElement) {
     try { last = Number(localStorage.getItem(LAST_BACKUP_KEY)) || 0; } catch { /* ignore */ }
     const days = (Date.now() - last) / 86400000;
     if (last && days < 7) return '';
-    return last ? `Last backup was ${Math.floor(days)} days ago. ` : 'No backup has been exported yet. ';
+    return last ? `Last copy saved ${Math.floor(days)} days ago. ` : 'No patient file or backup has been saved yet. ';
   }
 
   function markBackedUp() { try { localStorage.setItem(LAST_BACKUP_KEY, String(Date.now())); } catch { /* ignore */ } }
@@ -75,16 +101,17 @@ export async function startApp(root: HTMLElement) {
         <input type="search" id="filter" placeholder="Search name / hospital no." value="${esc(filter)}" aria-label="Search patients">
         <ul class="plist">${shown.map((x) => `<li data-id="${x.id}" class="${x.id === selectedId ? 'sel' : ''}">${esc(x.name || 'Unnamed')}<small>${esc(x.hospitalNumber || 'no hospital no.')} · ${x.measurements.length} scan${x.measurements.length === 1 ? '' : 's'}</small></li>`).join('') || '<li class="muted">No patients yet</li>'}</ul>
         <div class="row">
-          <button data-act="backup">Back up all</button>
+          <button data-act="backup" title="One JSON file with every patient">Back up all</button>
           <button data-act="import">Import</button>
         </div>
-        <input type="file" id="file" accept="application/json,.json" hidden>
+        <input type="file" id="file" accept="application/json,.json,text/html,.html" hidden>
         <div class="muted">All data stays on this device. Nothing is sent anywhere.</div>
         </div>
       </aside>
       <main>
-        ${store.persistent ? '' : '<div class="banner">Browser storage is unavailable, so data will be lost when you close this page. Export a backup before leaving.</div>'}
-        ${backupNudge() ? `<div class="banner noprint">${backupNudge()}Browser storage can be cleared, so use <b>Back up all</b> regularly.</div>` : ''}
+        ${store.persistent ? '' : '<div class="banner">Browser storage is unavailable here, so changes are kept only until you close this page. Use <b>Save patient file</b> to keep your work.</div>'}
+        ${fileNotice ? `<div class="banner">${esc(fileNotice)}</div>` : ''}
+        ${backupNudge() ? `<div class="banner noprint">${backupNudge()}Patients are stored in this browser only, which can be cleared. Use <b>Save patient file</b> on each patient to keep a copy.</div>` : ''}
         ${toast ? `<div class="banner">${esc(toast)}</div>` : ''}
         ${p ? patientView(p) : '<div class="card accent">Create or select a patient to begin.</div>'}
         ${legend()}
@@ -121,11 +148,13 @@ export async function startApp(root: HTMLElement) {
       </div>
       <div class="card chartwrap">${buildChartSvg(p.measurements, { theme: themeFor(), title: [p.name, p.hospitalNumber].filter(Boolean).join(' · ') || undefined })}</div>
       <div class="row noprint">
-        <button class="primary" data-act="pdf">Export PDF</button>
-        <button data-act="export-one">Save patient (JSON)</button>
+        <button class="primary" data-act="save-file">Save patient file</button>
+        <button data-act="pdf">Export PDF</button>
         <button data-act="print">Print</button>
         <button class="danger" data-act="delete">Delete patient</button>
-      </div>`;
+        <span id="savestate" class="muted">${unsaved.has(p.id) ? 'Unsaved changes: save the patient file to keep a copy.' : ''}</span>
+      </div>
+      <div class="hint noprint">The patient file is a single HTML file holding this patient's details and the app itself. Open it in any browser to carry on where you left off; no import needed. It contains patient-identifiable data, so store it securely.</div>`;
   }
 
   function rowView(m: Measurement): string {
@@ -189,7 +218,10 @@ export async function startApp(root: HTMLElement) {
       case 'delete': if (p && confirm(`Delete ${p.name || 'this patient'} and all their measurements from this device? Export a backup first if unsure.`)) { await store.remove(p.id); patients = patients.filter((x) => x.id !== p.id); selectedId = patients[0]?.id ?? null; render(); } break;
       case 'pdf': if (p) { try { const { exportPatientPdf } = await import('../lib/pdf'); await exportPatientPdf(p); } catch (err) { say('PDF export failed: ' + (err as Error).message); } } break;
       case 'print': window.print(); break;
-      case 'export-one': if (p) download(`VI-${(p.hospitalNumber || p.name || 'patient').replace(/[^\w.-]+/g, '_')}.json`, JSON.stringify(makeBackup([p]), null, 2), 'application/json'); break;
+      case 'save-file': if (p) {
+        try { download(patientFileName(p), buildPatientHtml(document, p), 'text/html'); unsaved.delete(p.id); fileNotice = ''; markBackedUp(); say('Patient file saved to your downloads.'); }
+        catch (err) { say('Could not save the patient file: ' + (err as Error).message); }
+      } break;
       case 'backup': download(`VI-backup-${new Date().toISOString().slice(0, 10)}.json`, JSON.stringify(makeBackup(patients), null, 2), 'application/json'); markBackedUp(); render(); break;
       case 'import': root.querySelector<HTMLInputElement>('#file')!.click(); break;
     }
@@ -199,7 +231,7 @@ export async function startApp(root: HTMLElement) {
     const file = input.files?.[0]; input.value = '';
     if (!file) return;
     try {
-      const incoming = parseBackup(await file.text());
+      const incoming = parseImport(await file.text());
       const { toWrite, added, updated } = mergeImport(patients, incoming);
       for (const p of toWrite) await store.put(p);
       patients = (await store.all()).sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
@@ -208,6 +240,10 @@ export async function startApp(root: HTMLElement) {
     } catch (err) { say((err as Error).message); }
   }
 
+  window.addEventListener('beforeunload', (e) => {
+    // With working browser storage nothing is lost on close; without it, unsaved edits would be.
+    if (!store.persistent && unsaved.size) { e.preventDefault(); e.returnValue = ''; }
+  });
   window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => render());
   render();
 }

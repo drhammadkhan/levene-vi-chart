@@ -27,9 +27,8 @@ jobs:
       - run: npm ci
       - run: npm test
       - run: npm run build
-      - run: npm run build:single
       - name: Name the single-file build
-        run: cp dist-single/index.html levene-vi-chart.html
+        run: cp dist/index.html levene-vi-chart.html
       - uses: actions/upload-artifact@v4
         with:
           name: levene-vi-chart-single-file
