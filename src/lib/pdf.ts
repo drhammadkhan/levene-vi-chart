@@ -77,7 +77,7 @@ export async function exportPatientPdf(p: Patient): Promise<void> {
   const pages = doc.getNumberOfPages();
   for (let i = 1; i <= pages; i++) {
     doc.setPage(i).setFont('helvetica', 'normal').setFontSize(7.5).setTextColor(100);
-    const note = doc.splitTextToSize(`Reference: ${CITATION} Centiles are linearly interpolated between whole weeks and not extrapolated outside 27-40 weeks. "ABOVE" = above the 97th centile + 4 mm. This chart is a reference aid and does not replace clinical judgement.`, pageW - margin * 2);
+    const note = doc.splitTextToSize(`Reference: ${CITATION} Centiles are linearly interpolated between whole weeks and not extrapolated outside 27-40 weeks. "ABOVE" = above the 97th centile + 4 mm. This chart is a reference aid and does not replace clinical judgement. Only use this tool on a hospital computer; do not enter patient details on your own device.`, pageW - margin * 2);
     doc.text(note, margin, pageH - 14);
     doc.text('Evelina Neonatal data group', margin, pageH - 6);
     doc.text(`Page ${i} of ${pages}`, pageW - margin, pageH - 6, { align: 'right' });
