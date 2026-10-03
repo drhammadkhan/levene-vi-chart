@@ -21,6 +21,9 @@ Each patient can be saved as a **patient file**: one HTML file containing the wh
 ## Build
 `npm run build` produces `dist/index.html`, a single self-contained file. It is both the hosted GitHub Pages site and the template for patient files. Each tagged release (`v*`) attaches it as `levene-vi-chart.html`, which works offline from a USB stick or shared drive.
 
+## Desktop icon on Windows
+An HTML file always shows the default browser's icon in Explorer; a page cannot set its own file icon. To get a branded icon on a hospital PC, download `levene-vi-chart.ico` from the same release, keep it somewhere permanent, then right-click the HTML file, choose **Create shortcut**, open the shortcut's **Properties**, click **Change Icon...**, browse to the `.ico` and confirm. Use the shortcut to open the tool. (The favicon shown in the browser tab is embedded in the page itself.)
+
 ## Development
 ```bash
 npm install
