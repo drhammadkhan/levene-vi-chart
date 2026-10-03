@@ -1,4 +1,4 @@
-import type { Patient } from './types';
+import { upgradeLegacyPatient, type Patient } from './types';
 
 /**
  * Local-only persistence. Patients live in IndexedDB on this device.
@@ -38,7 +38,7 @@ class IdbStore implements PatientStore {
   private store(mode: IDBTransactionMode) {
     return this.db.transaction(STORE, mode).objectStore(STORE);
   }
-  all() { return reqToPromise(this.store('readonly').getAll() as IDBRequest<Patient[]>); }
+  async all() { return (await reqToPromise(this.store('readonly').getAll() as IDBRequest<Patient[]>)).map(upgradeLegacyPatient); }
   async put(p: Patient) { await reqToPromise(this.store('readwrite').put(p)); }
   async remove(id: string) { await reqToPromise(this.store('readwrite').delete(id)); }
 }

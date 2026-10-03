@@ -1,15 +1,15 @@
 import { jsPDF } from 'jspdf';
 import { svg2pdf } from 'svg2pdf.js';
-import { centilesAt, decimalPma, flagVi } from './centiles';
+import { centilesAt, decimalCga, flagVi } from './centiles';
 import { buildChartSvg } from './chart';
 import { CITATION } from './reference';
 import type { Patient } from './types';
 
 const fmt = (n: number | null) => (n == null ? '-' : n.toFixed(1));
 
-function flagText(pma: number | null, vi: number | null): string {
-  if (pma == null || vi == null) return '';
-  const f = flagVi(pma, vi);
+function flagText(cga: number | null, vi: number | null): string {
+  if (cga == null || vi == null) return '';
+  const f = flagVi(cga, vi);
   return f === 'above' ? 'ABOVE' : f === 'out-of-range' ? 'n/a' : '';
 }
 
@@ -44,10 +44,10 @@ export async function exportPatientPdf(p: Patient): Promise<void> {
 
   const cols = [
     { h: 'Scan date', x: margin },
-    { h: 'PMA (w+d)', x: margin + 32 },
+    { h: 'CGA (w+d)', x: margin + 32 },
     { h: 'Right VI (mm)', x: margin + 62 },
     { h: 'Left VI (mm)', x: margin + 94 },
-    { h: '97th+4 at PMA', x: margin + 126 },
+    { h: '97th+4 at CGA', x: margin + 126 },
     { h: 'Flag', x: margin + 158 },
   ];
   const header = (yy: number) => {
@@ -60,14 +60,14 @@ export async function exportPatientPdf(p: Patient): Promise<void> {
   header(yy);
   yy += 6;
   const rows = [...p.measurements]
-    .filter((m) => m.pmaWeeks != null)
-    .sort((a, b) => decimalPma(a.pmaWeeks!, a.pmaDays ?? 0) - decimalPma(b.pmaWeeks!, b.pmaDays ?? 0));
+    .filter((m) => m.cgaWeeks != null)
+    .sort((a, b) => decimalCga(a.cgaWeeks!, a.cgaDays ?? 0) - decimalCga(b.cgaWeeks!, b.cgaDays ?? 0));
   for (const m of rows) {
     if (yy > pageH - 28) { doc.addPage(); yy = 20; header(yy); yy += 6; }
-    const pma = decimalPma(m.pmaWeeks!, m.pmaDays ?? 0);
-    const c = centilesAt(pma);
-    const flags = [flagText(pma, m.rightVi) && `R ${flagText(pma, m.rightVi)}`, flagText(pma, m.leftVi) && `L ${flagText(pma, m.leftVi)}`].filter(Boolean).join(' ');
-    const cells = [m.scanDate || '-', `${m.pmaWeeks}+${m.pmaDays ?? 0}`, fmt(m.rightVi), fmt(m.leftVi), c ? c.p97plus4.toFixed(1) : '-', flags];
+    const cga = decimalCga(m.cgaWeeks!, m.cgaDays ?? 0);
+    const c = centilesAt(cga);
+    const flags = [flagText(cga, m.rightVi) && `R ${flagText(cga, m.rightVi)}`, flagText(cga, m.leftVi) && `L ${flagText(cga, m.leftVi)}`].filter(Boolean).join(' ');
+    const cells = [m.scanDate || '-', `${m.cgaWeeks}+${m.cgaDays ?? 0}`, fmt(m.rightVi), fmt(m.leftVi), c ? c.p97plus4.toFixed(1) : '-', flags];
     cells.forEach((t, i) => doc.text(t, cols[i].x, yy));
     yy += 5.5;
   }

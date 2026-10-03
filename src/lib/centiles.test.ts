@@ -1,11 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { centilesAt, decimalPma, flagVi } from './centiles';
+import { centilesAt, decimalCga, flagVi } from './centiles';
 
-describe('decimalPma', () => {
+describe('decimalCga', () => {
   it('converts weeks+days', () => {
-    expect(decimalPma(29, 0)).toBe(29);
-    expect(decimalPma(29, 7)).toBe(30);
-    expect(decimalPma(30, 3)).toBeCloseTo(30 + 3 / 7);
+    expect(decimalCga(29, 0)).toBe(29);
+    expect(decimalCga(29, 7)).toBe(30);
+    expect(decimalCga(30, 3)).toBeCloseTo(30 + 3 / 7);
   });
 });
 

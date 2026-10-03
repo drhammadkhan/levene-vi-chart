@@ -26,8 +26,9 @@ function parseMeasurement(raw: unknown): Measurement | null {
   return {
     id,
     scanDate: str(r.scanDate, 10),
-    pmaWeeks: numOrNull(r.pmaWeeks),
-    pmaDays: numOrNull(r.pmaDays),
+    // pmaWeeks/pmaDays are the names used by earlier versions; still accepted so old files import.
+    cgaWeeks: numOrNull(r.cgaWeeks ?? r.pmaWeeks),
+    cgaDays: numOrNull(r.cgaDays ?? r.pmaDays),
     rightVi: numOrNull(r.rightVi),
     leftVi: numOrNull(r.leftVi),
   };

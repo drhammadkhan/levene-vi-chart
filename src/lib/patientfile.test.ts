@@ -13,7 +13,7 @@ describe('patient file', () => {
   it('round-trips a patient and strips the rendered UI', () => {
     const p = newPatient();
     p.name = 'Baby A'; p.notes = 'tricky </script><b>x</b> & "quotes"';
-    const m = newMeasurement(); m.pmaWeeks = 30; m.rightVi = 12.5; p.measurements.push(m);
+    const m = newMeasurement(); m.cgaWeeks = 30; m.rightVi = 12.5; p.measurements.push(m);
 
     const html = buildPatientHtml(document, p);
     expect(html.startsWith('<!doctype html>')).toBe(true);

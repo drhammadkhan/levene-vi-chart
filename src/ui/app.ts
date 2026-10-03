@@ -1,4 +1,5 @@
-import { centilesAt, decimalPma, flagVi } from '../lib/centiles';
+import { centilesAt, decimalCga, flagVi } from '../lib/centiles';
+import { formatCga, parseCga } from '../lib/cga';
 import { buildChartSvg, type ChartTheme } from '../lib/chart';
 import { makeBackup, mergeImport } from '../lib/backup';
 import { buildPatientHtml, parseImport, patientFileName, readEmbedded } from '../lib/patientfile';
@@ -22,15 +23,9 @@ function parseNum(v: string): number | null {
   return Number.isFinite(n) ? n : NaN;
 }
 
-type FieldKey = 'pmaWeeks' | 'pmaDays' | 'rightVi' | 'leftVi';
-const LIMITS: Record<FieldKey, { min: number; max: number; int: boolean }> = {
-  pmaWeeks: { min: 22, max: 45, int: true },
-  pmaDays: { min: 0, max: 6, int: true },
-  rightVi: { min: 0, max: 60, int: false },
-  leftVi: { min: 0, max: 60, int: false },
-};
-const isBad = (k: FieldKey, v: number | null) =>
-  v != null && (Number.isNaN(v) || v < LIMITS[k].min || v > LIMITS[k].max || (LIMITS[k].int && !Number.isInteger(v)));
+type ViKey = 'rightVi' | 'leftVi';
+const VI_MAX = 60;
+const viBad = (v: number | null) => v != null && (Number.isNaN(v) || v < 0 || v > VI_MAX);
 
 export async function startApp(root: HTMLElement) {
   const store: PatientStore = await openStore();
@@ -40,6 +35,8 @@ export async function startApp(root: HTMLElement) {
   let toast = '';
   let fileNotice = '';
   const saveTimers = new Map<string, number>();
+  /** Text the clinician typed that could not be accepted, kept on screen (in red) rather than silently dropped. Key: `${rowId}:${field}`. */
+  const rejected = new Map<string, string>();
   /** Patients edited since they were last saved to a file (this session). */
   const unsaved = new Set<string>();
 
@@ -153,10 +150,10 @@ export async function startApp(root: HTMLElement) {
       </div>
       <div class="card">
         <h2>Measurements</h2>
-        <table><thead><tr><th>Scan date</th><th>PMA weeks</th><th>PMA days</th><th>Right VI (mm)</th><th>Left VI (mm)</th><th>97th+4 at PMA</th><th></th></tr></thead>
-        <tbody>${rows || '<tr><td colspan="7" class="muted">No scans yet.</td></tr>'}</tbody></table>
+        <table><thead><tr><th>Scan date</th><th>CGA (weeks+days)</th><th>Right VI (mm)</th><th>Left VI (mm)</th><th>97th+4 at CGA</th><th></th></tr></thead>
+        <tbody>${rows || '<tr><td colspan="6" class="muted">No scans yet.</td></tr>'}</tbody></table>
         <div class="row noprint" style="margin-top:10px"><button data-act="addrow">+ Add scan</button></div>
-        <div class="hint">Values above the interpolated 97th centile + 4 mm are shown in red. Centiles only exist for 27–40 weeks PMA.</div>
+        <div class="hint">Values above the interpolated 97th centile + 4 mm are shown in red. Centiles only exist for 27–40 weeks CGA. Enter CGA as weeks+days, e.g. 26+2.</div>
       </div>
       <div class="card chartwrap">${buildChartSvg(p.measurements, { theme: themeFor(), title: [p.name, p.hospitalNumber].filter(Boolean).join(' · ') || undefined })}</div>
       <div class="row noprint">
@@ -168,16 +165,20 @@ export async function startApp(root: HTMLElement) {
   }
 
   function rowView(m: Measurement): string {
-    const inp = (k: FieldKey, v: number | null) => `<td><input data-m="${k}" inputmode="decimal" value="${v ?? ''}" class="${isBad(k, v) ? 'bad' : ''}"></td>`;
-    const pma = m.pmaWeeks != null ? decimalPma(m.pmaWeeks, m.pmaDays ?? 0) : null;
-    const c = pma != null ? centilesAt(pma) : null;
-    const cls = (v: number | null) => (pma != null && flagVi(pma, v) === 'above' ? 'above' : '');
+    const bad = (k: string) => rejected.has(`${m.id}:${k}`);
+    const vi = (k: ViKey, v: number | null) => {
+      const text = bad(k) ? rejected.get(`${m.id}:${k}`)! : (v ?? '');
+      return `<input data-m="${k}" inputmode="decimal" value="${esc(String(text))}" class="${bad(k) ? 'bad' : ''}">`;
+    };
+    const cga = m.cgaWeeks != null ? decimalCga(m.cgaWeeks, m.cgaDays ?? 0) : null;
+    const c = cga != null ? centilesAt(cga) : null;
+    const cls = (v: number | null) => (cga != null && flagVi(cga, v) === 'above' ? 'above' : '');
     return `<tr data-mid="${m.id}">
       <td><input data-m="scanDate" type="date" value="${esc(m.scanDate)}"></td>
-      ${inp('pmaWeeks', m.pmaWeeks)}${inp('pmaDays', m.pmaDays)}
-      <td class="${cls(m.rightVi)}">${inp('rightVi', m.rightVi).replace(/^<td>|<\/td>$/g, '')}</td>
-      <td class="${cls(m.leftVi)}">${inp('leftVi', m.leftVi).replace(/^<td>|<\/td>$/g, '')}</td>
-      <td class="calc">${c ? c.p97plus4.toFixed(1) : pma != null ? 'n/a' : ''}</td>
+      <td><input data-m="cga" placeholder="26+2" inputmode="text" autocomplete="off" value="${esc(bad('cga') ? rejected.get(`${m.id}:cga`)! : formatCga(m.cgaWeeks, m.cgaDays))}" class="${bad('cga') ? 'bad' : ''}" title="Weeks+days, e.g. 26+2"></td>
+      <td class="${cls(m.rightVi)}">${vi('rightVi', m.rightVi)}</td>
+      <td class="${cls(m.leftVi)}">${vi('leftVi', m.leftVi)}</td>
+      <td class="calc">${c ? c.p97plus4.toFixed(1) : cga != null ? 'n/a' : ''}</td>
       <td class="noprint"><button data-act="delrow" title="Remove scan">✕</button></td></tr>`;
   }
 
@@ -202,15 +203,23 @@ export async function startApp(root: HTMLElement) {
     const key = t.dataset.m;
     if (!tr || !key) return;
     const m = p.measurements.find((x) => x.id === tr.dataset.mid)!;
+    const rk = `${m.id}:${key}`;
     if (key === 'scanDate') m.scanDate = t.value;
-    else {
+    else if (key === 'cga') {
+      if (t.value.trim() === '') { m.cgaWeeks = null; m.cgaDays = 0; rejected.delete(rk); }
+      else {
+        const r = parseCga(t.value);
+        if (r.ok) { m.cgaWeeks = r.weeks; m.cgaDays = r.days; rejected.delete(rk); }
+        else { m.cgaWeeks = null; m.cgaDays = 0; rejected.set(rk, t.value); }
+      }
+    } else {
       const v = parseNum(t.value);
-      if (isBad(key as FieldKey, v)) { t.classList.add('bad'); (m as unknown as Record<string, number | null>)[key] = null; }
-      else (m as unknown as Record<string, number | null>)[key] = v;
+      if (viBad(v)) { (m as unknown as Record<string, number | null>)[key] = null; rejected.set(rk, t.value); }
+      else { (m as unknown as Record<string, number | null>)[key] = v; rejected.delete(rk); }
     }
     p.measurements.sort((a, b) => {
-      const pa = a.pmaWeeks == null ? Infinity : decimalPma(a.pmaWeeks, a.pmaDays ?? 0);
-      const pb = b.pmaWeeks == null ? Infinity : decimalPma(b.pmaWeeks, b.pmaDays ?? 0);
+      const pa = a.cgaWeeks == null ? Infinity : decimalCga(a.cgaWeeks, a.cgaDays ?? 0);
+      const pb = b.cgaWeeks == null ? Infinity : decimalCga(b.cgaWeeks, b.cgaDays ?? 0);
       return pa - pb;
     });
     persist(p); render();
@@ -223,7 +232,7 @@ export async function startApp(root: HTMLElement) {
     const p = current();
     switch (el.dataset.act) {
       case 'new': { const np = newPatient(); patients.unshift(np); selectedId = np.id; await store.put(np); render(); root.querySelector<HTMLInputElement>('[data-p="name"]')?.focus(); break; }
-      case 'addrow': if (p) { p.measurements.push(newMeasurement()); persist(p); render(); root.querySelector<HTMLInputElement>('tr:last-child [data-m="pmaWeeks"]')?.focus(); } break;
+      case 'addrow': if (p) { p.measurements.push(newMeasurement()); persist(p); render(); root.querySelector<HTMLInputElement>('tr:last-child [data-m="cga"]')?.focus(); } break;
       case 'delrow': if (p) { const id = el.closest<HTMLElement>('tr')!.dataset.mid; p.measurements = p.measurements.filter((m) => m.id !== id); persist(p); render(); } break;
       case 'delete': if (p && confirm(`Delete ${p.name || 'this patient'} and all their measurements from this device? Export a backup first if unsure.`)) { await store.remove(p.id); patients = patients.filter((x) => x.id !== p.id); selectedId = patients[0]?.id ?? null; render(); } break;
       case 'pdf': if (p) { try { const { exportPatientPdf } = await import('../lib/pdf'); await exportPatientPdf(p); } catch (err) { say('PDF export failed: ' + (err as Error).message); } } break;
