@@ -137,7 +137,8 @@ export async function startApp(root: HTMLElement) {
     </footer>`;
   }
 
-  const themeFor = (): ChartTheme => (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+  let printing = false;
+  const themeFor = (): ChartTheme => (printing ? 'print' : window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
 
   function patientView(p: Patient): string {
     const rows = p.measurements.map((m) => rowView(m)).join('');
@@ -252,6 +253,9 @@ export async function startApp(root: HTMLElement) {
     // With working browser storage nothing is lost on close; without it, unsaved edits would be.
     if (!store.persistent && unsaved.size) { e.preventDefault(); e.returnValue = ''; }
   });
+  // Paper is white whatever the screen theme, so draw the chart with the print palette while printing.
+  window.addEventListener('beforeprint', () => { printing = true; render(); });
+  window.addEventListener('afterprint', () => { printing = false; render(); });
   window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => render());
   render();
 }
