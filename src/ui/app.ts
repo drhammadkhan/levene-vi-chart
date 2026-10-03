@@ -134,7 +134,7 @@ export async function startApp(root: HTMLElement) {
     return `<footer class="legend">
       <div class="notice" role="note"><strong>This tool supports, and does not replace, clinical judgement and current guidance.</strong> Use at your own discretion. Only use this tool on a hospital computer; do not enter patient details on your own device.</div>
       <div><b>Reference:</b> <a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC1627506/pdf/archdisch00762-0010.pdf" target="_blank" rel="noopener">Levene MI. Arch Dis Child 1981;56:900-904</a>. Flag = above the 97th centile + 4 mm, linearly interpolated between whole weeks (27&ndash;40 weeks only).</div>
-      <p class="credit">A tool from the Evelina Neonatal data group.</p>
+      <p class="credit">A tool from the Evelina Neonatal data group.<br>Created by Dr Hammad Khan, October 2026</p>
     </footer>`;
   }
 
