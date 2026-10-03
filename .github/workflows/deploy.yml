@@ -1,0 +1,55 @@
+name: Build and deploy
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  contents: write   # attach the single-file build to releases
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm test
+      - run: npm run build
+      - run: npm run build:single
+      - name: Name the single-file build
+        run: cp dist-single/index.html levene-vi-chart.html
+      - uses: actions/upload-artifact@v4
+        with:
+          name: levene-vi-chart-single-file
+          path: levene-vi-chart.html
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+      - name: Attach single file to release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: levene-vi-chart.html
+
+  deploy:
+    needs: build
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
