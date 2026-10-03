@@ -56,7 +56,7 @@ function parsePatient(raw: unknown): Patient | null {
 /** Parse and sanitise an imported file. Throws a readable Error if it isn't ours. */
 export function parseBackup(text: string): Patient[] {
   let data: unknown;
-  try { data = JSON.parse(text); } catch { throw new Error('File is not valid JSON.'); }
+  try { data = JSON.parse(text.replace(/^\uFEFF/, '')); } catch { throw new Error('File is not valid JSON.'); }
   const d = data as Partial<BackupFile> | null;
   if (!d || d.format !== BACKUP_FORMAT) throw new Error('This is not a Levene VI chart backup file.');
   if (typeof d.version !== 'number' || d.version > BACKUP_VERSION)

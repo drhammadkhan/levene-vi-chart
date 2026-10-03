@@ -12,6 +12,10 @@ describe('backup', () => {
     const back = parseBackup(JSON.stringify(makeBackup([p])));
     expect(back).toEqual([p]);
   });
+  it('accepts a file with a leading byte-order mark', () => {
+    const p = newPatient();
+    expect(parseBackup('\uFEFF' + JSON.stringify(makeBackup([p])))).toEqual([p]);
+  });
   it('rejects foreign or malformed files', () => {
     expect(() => parseBackup('nope')).toThrow(/JSON/);
     expect(() => parseBackup('{"format":"other"}')).toThrow(/not a Levene/);

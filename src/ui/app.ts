@@ -157,8 +157,8 @@ export async function startApp(root: HTMLElement) {
   // Measurement edits commit on 'change' so rows re-sort without losing the cursor mid-typing.
   root.addEventListener('change', (e) => {
     const t = e.target as HTMLInputElement;
-    const p = current(); if (!p) return;
     if (t.id === 'file') { void importFile(t); return; }
+    const p = current(); if (!p) return;
     const tr = t.closest<HTMLElement>('tr[data-mid]');
     const key = t.dataset.m;
     if (!tr || !key) return;
