@@ -130,7 +130,7 @@ export async function startApp(root: HTMLElement) {
 
   function legend(): string {
     return `<footer class="legend">
-      <div class="notice" role="note"><strong>This tool supports, and does not replace, clinical judgement and current guidance.</strong> Use at your own discretion. Only use this tool on a hospital computer; do not enter patient details on your own device.</div>
+      <div class="notice" role="note"><strong>Intended purpose:</strong> plots entered ventricular index measurements against the published Levene centiles, for reference. The clinician interprets the result. It supports, and does not replace, clinical judgement and current guidance. Only use this tool on a hospital computer; do not enter patient details on your own device.</div>
       <div><b>Reference:</b> <a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC1627506/pdf/archdisch00762-0010.pdf" target="_blank" rel="noopener">Levene MI. Arch Dis Child 1981;56:900-904</a>. Flag = above the 97th centile + 4 mm, linearly interpolated between whole weeks (27&ndash;40 weeks only).</div>
       <p class="back noprint"><a href="https://drhammadkhan.github.io/evelina-neonatal-data-group/" target="_blank" rel="noopener">&larr; All group tools</a></p>
       <p class="credit">A tool from the <a href="https://drhammadkhan.github.io/evelina-neonatal-data-group/" target="_blank" rel="noopener">Evelina Neonatal Data Group</a>.<br>Created by Dr Hammad Khan, October 2026</p>
