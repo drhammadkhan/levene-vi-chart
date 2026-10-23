@@ -1,5 +1,7 @@
 # Levene VI chart
 
+A tool from the [Evelina Neonatal Data Group](https://drhammadkhan.github.io/evelina-neonatal-data-group/).
+
 Plot right and left ventricular index (VI) against corrected gestational age on the Levene (1981) reference chart, keep a local patient list, and export a PDF or JSON.
 
 **All data stays on the device.** There is no server, no analytics and no network access (enforced by a `connect-src 'none'` Content-Security-Policy). Patients are stored in the browser's IndexedDB.
