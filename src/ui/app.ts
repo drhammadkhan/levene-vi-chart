@@ -208,8 +208,11 @@ export async function startApp(root: HTMLElement) {
     if (!tr || !key) return;
     const m = p.measurements.find((x) => x.id === tr.dataset.mid)!;
     const rk = `${m.id}:${key}`;
-    if (key === 'scanDate') m.scanDate = t.value;
-    else if (key === 'cga') {
+    if (key === 'scanDate') {
+      // Save without re-rendering. Chrome fires 'change' as soon as the typed date is valid (the year "2" is year 0002),
+      // and a re-render here would drop focus before the rest of the year could be typed. The date affects nothing on screen.
+      m.scanDate = t.value; persist(p); return;
+    } else if (key === 'cga') {
       if (t.value.trim() === '') { m.cgaWeeks = null; m.cgaDays = 0; rejected.delete(rk); }
       else {
         const r = parseCga(t.value);
