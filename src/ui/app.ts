@@ -87,7 +87,7 @@ export async function startApp(root: HTMLElement) {
     const shown = patients.filter((x) => (x.name + ' ' + x.hospitalNumber).toLowerCase().includes(filter.toLowerCase()));
     root.innerHTML = `
       <header class="topbar">
-        <a class="brand" href="https://drhammadkhan.github.io/evelina-neonatal-data-group/" target="_blank" rel="noopener">Evelina Neonatal Data Group</a>
+        <div class="toprow"><a class="brand" href="https://drhammadkhan.github.io/evelina-neonatal-data-group/" target="_blank" rel="noopener">Evelina Neonatal Data Group</a><button class="icon-btn" id="themeBtn" type="button" aria-label="Toggle light / dark theme" title="Toggle theme"><svg class="moon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg><svg class="sun" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg></button></div>
         <div class="kicker">Levene 1981 reference &middot; lateral ventricles</div>
         <h1>Ventricular index <em>chart</em></h1>
         <div class="devicewarn" role="alert"><strong>Only use this tool on a hospital computer.</strong> Do not enter patient details on your own device.</div>
@@ -136,7 +136,11 @@ export async function startApp(root: HTMLElement) {
   }
 
   let printing = false;
-  const themeFor = (): ChartTheme => (printing ? 'print' : window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+  const themeFor = (): ChartTheme => {
+    if (printing) return 'print';
+    const chosen = document.documentElement.getAttribute('data-theme');
+    return (chosen ?? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')) === 'dark' ? 'dark' : 'light';
+  };
 
   function patientView(p: Patient): string {
     const rows = p.measurements.map((m) => rowView(m)).join('');
@@ -267,5 +271,6 @@ export async function startApp(root: HTMLElement) {
   window.addEventListener('beforeprint', () => { printing = true; render(); });
   window.addEventListener('afterprint', () => { printing = false; render(); });
   window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => render());
+  window.addEventListener('themechange', () => render());
   render();
 }
