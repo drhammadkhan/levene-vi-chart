@@ -10,7 +10,7 @@ interface Palette { bg: string; text: string; grid: string; frame: string; right
 const PALETTES: Record<ChartTheme, Palette> = {
   print: { bg: '#ffffff', text: '#1b1814', grid: '#e5e0d4', frame: '#8a8275', right: '#1d5e57', left: '#1b1814', p50: '#7a7266', p97: '#c2321a' },
   light: { bg: 'none', text: '#1b1814', grid: '#d6cdbb', frame: '#7a7266', right: '#1d5e57', left: '#1b1814', p50: '#7a7266', p97: '#d63a1f' },
-  dark: { bg: 'none', text: '#f1ebdd', grid: '#363126', frame: '#9b9384', right: '#6fd0c2', left: '#f1ebdd', p50: '#9b9384', p97: '#ff7a5c' },
+  dark: { bg: 'none', text: '#f0deb9', grid: '#41474c', frame: '#aba597', right: '#a9ac8f', left: '#f0deb9', p50: '#aba597', p97: '#d99786' },
 };
 
 export interface PlotPoint {
@@ -34,7 +34,7 @@ const esc = (s: string) => s.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&l
  */
 export function buildChartSvg(ms: Measurement[], opts: { width?: number; height?: number; title?: string; theme?: ChartTheme } = {}): string {
   const COLORS = PALETTES[opts.theme ?? 'print'];
-  const ring = COLORS.bg === 'none' ? (opts.theme === 'dark' ? '#1d1a15' : '#ebe4d6') : COLORS.bg;
+  const ring = COLORS.bg === 'none' ? (opts.theme === 'dark' ? '#252c31' : '#ebe4d6') : COLORS.bg;
   const W = opts.width ?? 760, H = opts.height ?? 460;
   const m = { l: 56, r: 24, t: opts.title ? 44 : 20, b: 76 };
   const right = seriesFrom(ms, 'rightVi'), left = seriesFrom(ms, 'leftVi');

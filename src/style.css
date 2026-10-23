@@ -12,12 +12,12 @@
 
 :root {
   --paper:#f3eee4; --paper2:#ebe4d6; --ink:#1b1814; --mute:#675f54; --line:#d6cdbb;
-  --hot:#dd4027; --hot-ink:#b3301a; --hotbg:#f9ddd4; --cool:#1d5e57; --coolbg:#d9e8e2; --field:#fbf8f1;
+  --hot:#dd4027; --hot-ink:#b3301a; --hotbg:#f9ddd4; --cool:#1d5e57; --coolbg:#d9e8e2; --field:#fbf8f1; --on-hot:#fff; --danger:#dd4027; --danger-ink:#b3301a; --dangerbg:#f9ddd4;
   --serif:"Fraunces",Georgia,"Times New Roman",serif; --mono:"DM Mono",ui-monospace,Menlo,monospace;
 }
 @media (prefers-color-scheme: dark) { :root {
-  --paper:#15130f; --paper2:#1d1a15; --ink:#f1ebdd; --mute:#9b9384; --line:#363126;
-  --hot:#ff7a5c; --hot-ink:#ff7a5c; --hotbg:#3a1c14; --cool:#6fd0c2; --coolbg:#13302c; --field:#110f0c;
+  --paper:#1b2227; --paper2:#252c31; --ink:#f0deb9; --mute:#aba597; --line:#41474c;
+  --hot:#c78b4c; --hot-ink:#d4a677; --hotbg:#3b3227; --cool:#a9ac8f; --coolbg:#2b322c; --field:#13181c; --on-hot:#1b2227; --danger:#cb6951; --danger-ink:#d99786; --dangerbg:#3c2a28;
 } }
 * { box-sizing: border-box; }
 html { -webkit-text-size-adjust: 100%; }
@@ -56,13 +56,13 @@ button:hover, button:focus-visible { background: var(--ink); color: var(--paper)
 button:disabled { opacity: .45; cursor: not-allowed; transform: none; }
 button:disabled:hover { background: transparent; color: var(--ink); border-color: var(--line); }
 button.primary { background: var(--ink); color: var(--paper); border-color: var(--ink); }
-button.primary:hover, button.primary:focus-visible { background: var(--hot); border-color: var(--hot); color: #fff; }
-button.danger { color: var(--hot-ink); border-color: color-mix(in srgb, var(--hot) 45%, var(--line)); }
-button.danger:hover, button.danger:focus-visible { background: var(--hot); border-color: var(--hot); color: #fff; }
+button.primary:hover, button.primary:focus-visible { background: var(--hot-ink); border-color: var(--hot-ink); color: var(--on-hot); }
+button.danger { color: var(--danger-ink); border-color: color-mix(in srgb, var(--danger) 45%, var(--line)); }
+button.danger:hover, button.danger:focus-visible { background: var(--danger-ink); border-color: var(--danger-ink); color: var(--on-hot); }
 button[data-act=delrow] { padding: 4px 9px; border-radius: 50%; }
 input, textarea { font: 400 .95rem var(--serif); color: var(--ink); padding: 7px 9px; border: 1px solid var(--line); border-radius: 3px; width: 100%; background: var(--field); outline: none; transition: border-color .2s; }
 input:focus, textarea:focus { border-color: var(--hot); }
-input.bad { border-color: var(--hot); background: var(--hotbg); }
+input.bad { border-color: var(--danger); background: var(--dangerbg); }
 input[type=search] { font-style: italic; }
 
 .card { position: relative; background: var(--paper2); border: 1px solid var(--line); border-radius: 4px; padding: 20px 20px 18px; margin-bottom: 16px;
@@ -83,7 +83,7 @@ table { width: 100%; border-collapse: collapse; }
 th { text-align: left; font: 500 .66rem/1.2 var(--mono); letter-spacing: .1em; text-transform: uppercase; color: var(--mute); padding: 4px; }
 td { padding: 3px 4px; } td input { min-width: 62px; font-family: var(--mono); font-size: .88rem; }
 td.calc { white-space: nowrap; color: var(--mute); font: 400 .82rem var(--mono); }
-.above, .above input { color: var(--hot-ink); font-weight: 600; }
+.above, .above input { color: var(--danger-ink); font-weight: 600; }
 .banner { background: var(--hotbg); border: 1px solid color-mix(in srgb, var(--hot) 35%, var(--line)); border-left: 5px solid var(--hot); padding: 10px 14px; border-radius: 3px; margin-bottom: 14px; }
 .muted { color: var(--mute); font: 400 .72rem/1.5 var(--mono); }
 .chartwrap svg { width: 100%; height: auto; display: block; }
@@ -97,7 +97,7 @@ td.calc { white-space: nowrap; color: var(--mute); font: 400 .82rem var(--mono);
 @media (max-width: 820px) { .layout { grid-template-columns: 1fr; } aside { position: static; } .plist { max-height: 28vh; } }
 @media print {
   /* Cards fade in on screen; in print the animation never runs, which left them invisible. */
-  :root { --paper:#fff; --paper2:#fff; --ink:#111; --mute:#555; --line:#ccc; --hot:#c2321a; --hot-ink:#c2321a; --hotbg:#fff; --cool:#1d5e57; --field:#fff; }
+  :root { --paper:#fff; --paper2:#fff; --ink:#111; --mute:#555; --line:#ccc; --hot:#c2321a; --hot-ink:#c2321a; --hotbg:#fff; --danger:#c2321a; --danger-ink:#c2321a; --dangerbg:#fff; --cool:#1d5e57; --field:#fff; }
   body { background: #fff; font-size: 12px; }
   body::before { display: none; }
   #app { max-width: none; padding: 0; }
