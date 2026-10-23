@@ -36,4 +36,4 @@ npm test
 ## Reference
 Levene MI. Measurement of the growth of the lateral ventricles in preterm infants with real-time ultrasound. Arch Dis Child 1981;56:900-904. https://pmc.ncbi.nlm.nih.gov/articles/PMC1627506/pdf/archdisch00762-0010.pdf
 
-This is a reference aid and does not replace clinical judgement. It is not a certified medical device.
+**Intended purpose:** plots entered ventricular index measurements against the published Levene centiles, for reference. The clinician interprets the result. It supports, and does not replace, clinical judgement.
